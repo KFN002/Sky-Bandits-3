@@ -143,8 +143,10 @@ def play(plane_data, player_data):  # босс-вертолет
         screen.blit(boss_label_text, boss_label_rect)
 
         boss_health_width = int((boss_health / boss_max_health) * 400)
-        pygame.draw.rect(screen, (255, 0, 0), (width // 2 - 200, 20, boss_health_width, 20))
-        pygame.draw.rect(screen, (255, 255, 255), (width // 2 - 200, 20, 400, 20), 2)
+        pygame.draw.rect(screen, (255, 0, 0), (width // 2 - (boss_max_health // 2),
+                                               20, boss_health_width, 20))
+        pygame.draw.rect(screen, (255, 255, 255), (width // 2 - (boss_max_health // 2),
+                                                   20, boss_max_health, 20), 2)
 
         clock.tick(fps)
         k_shoot = (k_shoot + 1) % 61
