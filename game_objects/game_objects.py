@@ -169,6 +169,12 @@ class Player(BasicSprite):
             collided.kill()
             self.hit()
 
+    def check_plane_collision(self, objects):
+        collided = pygame.sprite.spritecollideany(self, objects)
+        if collided and not collided.destroyed:
+            collided.kill()
+            self.kill()
+
     def shot(self, bullets):
         collided = pygame.sprite.spritecollideany(self, bullets)
         if collided:
@@ -185,7 +191,18 @@ class Player(BasicSprite):
 
     def kill(self):
         self.down = True
-        self.exploding = False
+        self.exploding = True
+
+    def win(self, score, group, player_data, plane_data):
+        group.remove(self)
+        mixer.stop()
+
+        add_points = threading.Thread(target=data_master.change_score_money(player_data, int(int(plane_data[11])
+                                                                                             * score)))
+        add_points.start()
+        _, user_data = data_master.check_player(player_data[0], player_data[1])
+        data_master.show_info(user_data)
+
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, image, speed, px):
@@ -261,12 +278,12 @@ class EnemyBase(BasicSprite):
 
 
 class AARocket(BasicSprite):
-    def __init__(self, x, height):
+    def __init__(self, x, height, speed=14):
         BasicSprite.__init__(self, [pygame.image.load(os.path.join(cwd, 'data', 'arms', 'aa_rocket.png'))] +
                              [pygame.image.load(os.path.join(cwd, 'data', 'booms', f'boom{i}.png')) for i in
                               range(1, 7)] +
                              [pygame.image.load(os.path.join(cwd, 'data', 'booms', 'blank_space.png'))],
-                             14)
+                             speed)
         self.rect.x = x
         self.rect.y = height
         self.sound = mixer.Sound(os.path.join(cwd, 'data', 'music', 'explosion.wav'))
@@ -383,9 +400,9 @@ class BossHelicopter(pygame.sprite.Sprite):
     def __init__(self, enemy_pos):
         pygame.sprite.Sprite.__init__(self)
         self.normal_frames = [pygame.image.load(os.path.join(cwd, 'data', 'helicopters', 'boss', f"{i}.png")) for i in range(6)]
-        self.explosion_frames = [[pygame.image.load(os.path.join(cwd, 'data', 'booms', f'boom{i}.png'))
-                                  for i in range(1, 7)] +
-                                 [pygame.image.load(os.path.join(cwd, 'data', 'booms', 'blank_space.png'))]]
+        self.explosion_frames = [pygame.image.load(os.path.join(cwd, 'data', 'booms', f'boom{i}.png'))
+                                 for i in range(1, 7)] + \
+                                [pygame.image.load(os.path.join(cwd, 'data', 'booms', 'blank_space.png'))]
         self.current_frame = 0
         self.destroyed = False
         self.exploding = False
@@ -410,6 +427,7 @@ class BossHelicopter(pygame.sprite.Sprite):
             else:
                 self.destroyed = True
                 group.remove(self)
+                self.sound.play()
         else:
             self.current_frame = (self.current_frame + 1) % len(self.normal_frames)
             self.image = self.normal_frames[self.current_frame]
@@ -437,10 +455,17 @@ class BossHelicopter(pygame.sprite.Sprite):
         if collided:
             bullets.remove(collided)
             self.health -= damage
-            if self.health <= 0:
+            if self.health <= 0 and not self.exploding:
                 self.exploding = True
-                return True
+                self.current_frame = 0
+            return True
         return False
+
+    def hit(self, damage):
+        self.health -= damage
+        if self.health <= 0:
+            self.exploding = True
+
 
     def shoot(self, group):
         bullet_image = pygame.image.load(os.path.join(os.getcwd(), 'data', 'arms', 'bullet.png')).convert_alpha()

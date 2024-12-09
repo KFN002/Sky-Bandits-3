@@ -1,4 +1,4 @@
-from game_objects.game_objects import Player, Enemy, Background, Decorations
+from game_objects.game_objects import Player, Enemy, Background, Decorations, AARocket
 import pygame
 import random
 
@@ -7,6 +7,7 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
     pygame.init()
     k_spawn = 0
     k_shoot = 0
+    k_spawn_aa = 0
     score = 0
     k_spawn_dec = 0
     size = width, height = 1200, 800
@@ -22,6 +23,7 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
     enemy_bullets = pygame.sprite.Group()
     player_bullets = pygame.sprite.Group()
     player_rockets = pygame.sprite.Group()
+    enemy_aa = pygame.sprite.Group()
     decorations = pygame.sprite.Group()
 
     background = Background(img_path, plane_data[5], level_k=0.5)
@@ -75,7 +77,7 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
 
         for enemy in enemies:
             enemy.move()
-            if k_shoot == 60:
+            if k_shoot == 100:
                 enemy.shoot(enemy_bullets)
             if enemy.shot(player_bullets, plane_data[7]):
                 score += 1
@@ -86,7 +88,7 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
 
         for gamer in players:
             gamer.update(players, player_data, plane_data, score)
-            gamer.check_plane_collision(enemies)
+            gamer.check_collision(enemies)
             gamer.shot(enemy_bullets)
 
         for rocket in player_rockets:
@@ -103,6 +105,22 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
 
         for dec in decorations:
             dec.move()
+
+        if k_spawn_aa == 150:
+            aa = AARocket(player.rect.x + 25, height, 6)
+            enemy_aa.add(aa)
+            aa.chase()
+
+        for rocket in enemy_aa:
+            rocket.move(-1)
+            rocket.update_animation(enemy_aa)
+            if not rocket.check_collision(players) and not rocket.destroyed:
+                rocket.exploded()
+                player.hit()
+            if not rocket.check_collision(enemies):
+                collided = pygame.sprite.spritecollideany(rocket, enemies)
+                rocket.exploded()
+                collided.kill()
 
         score_text = font.render(f'Score: {score}', True, (255, 255, 255))
         health_text = font.render(f'Health: {player.hits}', True, (255, 255, 255))
@@ -125,6 +143,7 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
         players.draw(screen)
         enemies.draw(screen)
         enemy_bullets.draw(screen)
+        enemy_aa.draw(screen)
         player_bullets.draw(screen)
         player_rockets.draw(screen)
         screen.blit(score_text, score_rect)
@@ -133,8 +152,9 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
         screen.blit(rockets_text, rockets_rect)
 
         clock.tick(fps)
+        k_spawn_aa = (k_spawn_aa + 1) % 151
         k_spawn = (k_spawn + 1) % 81
-        k_shoot = (k_shoot + 1) % 61
+        k_shoot = (k_shoot + 1) % 101
         k_spawn_dec = (k_spawn_dec + 1) % 21
         pygame.display.flip()
     pygame.quit()

@@ -10,6 +10,8 @@ def play(plane_data, player_data):  # босс-вертолет
     score = 0
     k_spawn_dec = 0
     size = width, height = 1200, 800
+    win_timer = 0
+    won = False
 
     screen = pygame.display.set_mode(size)
     img_path = random.choice(['./data/backgrounds/jungles.png',
@@ -79,26 +81,25 @@ def play(plane_data, player_data):  # босс-вертолет
             if k_shoot == 60:
                 enemy.shoot(enemy_bullets)
             if enemy.shot(player_bullets, plane_data[7]):
-                score += 1
                 player.add_bullets()
-            if enemy.shot(player_rockets, 10):
-                score += 1
             enemy.update_animation(enemies)
             if enemy.is_dead():
-                score = 1998
-                for gamer in players:
-                    gamer.kill()
+                score += 1998
+                win_timer = 0
+                won = True
 
         for gamer in players:
             gamer.update(players, player_data, plane_data, score)
-            gamer.check_collision(enemies)
+            gamer.check_plane_collision(enemies)
             gamer.shot(enemy_bullets)
 
         for rocket in player_rockets:
             rocket.move(-1)
             rocket.update_animation(player_rockets)
-            if not rocket.check_collision(enemies) and not rocket.destroyed:
+            collided = pygame.sprite.spritecollideany(rocket, enemies)
+            if collided and not rocket.destroyed:
                 rocket.exploded()
+                collided.hit(20)
 
         for bullet in player_bullets:
             bullet.update()
@@ -109,6 +110,9 @@ def play(plane_data, player_data):  # босс-вертолет
         for dec in decorations:
             dec.move()
 
+        if won and win_timer >= 120:
+            for gamer in players:
+                gamer.win(score, players, player_data, plane_data)
 
         score_text = font.render(f'Score: {score}', True, (255, 255, 255))
         health_text = font.render(f'Health: {player.hits}', True, (255, 255, 255))
@@ -149,6 +153,7 @@ def play(plane_data, player_data):  # босс-вертолет
                                                    20, boss_max_health, 20), 2)
 
         clock.tick(fps)
+        win_timer += 1
         k_shoot = (k_shoot + 1) % 61
         k_spawn_dec = (k_spawn_dec + 1) % 21
         pygame.display.flip()

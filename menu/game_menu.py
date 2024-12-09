@@ -2,6 +2,7 @@ import os
 import games.game_2
 import games.game_1
 import games.game_3
+import games.game_4
 import games.sandbox
 from utils import data_master
 from info.show_info import redirect
@@ -37,20 +38,19 @@ def start_game(plane_status, plane, player_data):   # запуск уровня,
         mixer.music.play(-1)
 
         if choice([True, False]):
-            mixer.stop()
-            mixer.music.load('./data/music/mission.mp3')
-            mixer.music.set_volume(0.2)
-            mixer.music.play(-1)
             if choice([True, False]):
                 games.game_1.play(list(plane_data), player_data)
             else:
                 games.game_2.play(list(plane_data), player_data)   
         else:
-            mixer.stop()
-            mixer.music.load('./data/music/kover-vertolet.mp3')
-            mixer.music.set_volume(0.8)
-            mixer.music.play(-1)
-            games.game_3.play(list(plane_data), player_data)
+            if choice([True, False]):
+                games.game_4.play(list(plane_data), player_data)
+            else:
+                mixer.stop()
+                mixer.music.load('./data/music/kover-vertolet.mp3')
+                mixer.music.set_volume(0.8)
+                mixer.music.play(-1)
+                games.game_3.play(list(plane_data), player_data)
 
 
 def buy_plane(plane, player_data, planes_available, all_planes, menu):   # покупка самолета
