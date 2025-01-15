@@ -148,8 +148,8 @@ class Player(BasicSprite):
             rocket.chase()
             self.rockets -= 1
 
-    def hit(self):
-        self.hits -= 1
+    def hit(self, delta=1):
+        self.hits -= delta
         if self.hits <= 0:
             self.hits = 0
             self.down = True
@@ -178,8 +178,19 @@ class Player(BasicSprite):
     def shot(self, bullets):
         collided = pygame.sprite.spritecollideany(self, bullets)
         if collided:
+            center_x = self.rect.centerx
+            collided_x = collided.rect.centerx
+            deviation = abs(collided_x - center_x) / (self.rect.width / 2)
+
+            if deviation <= 0.3:
+                delta = 1.0
+            elif deviation <= 0.7:
+                delta = 0.5
+            else:
+                delta = 0.25
+
             bullets.remove(collided)
-            self.hit()
+            self.hit(delta)
 
     def not_turning(self, vector):
         if self.turning_l > 0 and vector == -1:
