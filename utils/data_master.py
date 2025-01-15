@@ -22,12 +22,15 @@ def check_player(name: str, password: str) -> (bool, list[any]):
     elif player_data and player_data[2] != password:
         return False, player_data
     else:
-        cursor.execute("INSERT INTO users (login, password, money, planes, max_score) VALUES (?, ?, ?, ?, ?)",
-                       (name, password, 0, "1" + "0" * 7, 0))
+        cursor.execute("INSERT INTO users (login, password, money, planes, max_score, last_plane) VALUES (?, ?, ?, ?, ?, ?)",
+                       (name, password, 0, "1" + "0" * 7, 0, 1))
         conn.commit()
         cursor.execute("SELECT * FROM users WHERE login = ?", (name,))
         return True, cursor.fetchone()[1:]
 
+def update_last_plane(player_data, plane_id):
+    cursor.execute("UPDATE users SET last_plane = ? WHERE login = ?", (plane_id, player_data[0]))
+    conn.commit()
 
 def change_value(price, player_data, plane_id):
     """

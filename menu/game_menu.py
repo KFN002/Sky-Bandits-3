@@ -10,7 +10,7 @@ from random import choice
 from utils.data_master import *
 
 
-def compare_data(plane, planes_available, all_planes):   # проврека наличия самолета в приобритенных
+def compare_data(plane, planes_available, all_planes):  # проверка наличия самолета в приобритенных
     planes_available = list(str(planes_available))
     all_planes = list(map(lambda x: x[0], all_planes))
     return planes_available[all_planes.index(plane[0][0])]
@@ -31,6 +31,8 @@ def draw_background(plane, buy_btn, pic, planes_available, all_planes):  # по�
 def start_game(plane_status, plane, player_data):   # запуск уровня, подгрузка данных
     if plane_status.get_title() == '':
         plane_data = cursor.execute(f"""SELECT * FROM planes WHERE model = '{plane[0][0]}'""").fetchone()
+
+        data_master.update_last_plane(player_data, plane_data[0])
 
         mixer.stop()
         mixer.music.load('./data/music/mission.mp3')
@@ -60,21 +62,24 @@ def buy_plane(plane, player_data, planes_available, all_planes, menu):   # по�
         data_master.change_value(plane_data[1], player_data, plane_data[0])
         menu.close()
         _, user_data = data_master.check_player(*player_data[:2])
-        print("data after purchase:", user_data)
         start(user_data)
 
 
 def start(player_data):
     # меню с выбором самолета, его приобретением
-
-    print("player_data on start:", player_data)
     pygame.init()
     planes = []
 
-    result = cursor.execute("""SELECT model, hist_image, price from planes ORDER BY price""").fetchall()
-    for i, j in enumerate(result):
-        planes.append((j[0], i))
-    money = player_data[2]
+    player_current_plane = cursor.execute(f"""SELECT last_plane FROM users WHERE login = '{player_data[0]}'""").fetchone()
+
+    result = cursor.execute("""SELECT id, model, hist_image, price from planes ORDER BY price""").fetchall()
+    for i, plane in enumerate(result):
+        if player_current_plane[0] == plane[0]:
+            planes.insert(0, (plane[1], i))
+        else:
+            planes.append((plane[1], i))
+
+    player_money = player_data[2]
 
     pygame.display.set_caption('Sky Bandits 3')
     mixer.music.load('./data/music/arcade_theme.mp3')
@@ -92,7 +97,7 @@ def start(player_data):
     my_theme.background_color = background
 
     menu = pygame_menu.Menu('Sky Bandits 3', width, height, theme=my_theme)
-    menu.add.label(f'Money {money}', align=pygame_menu.locals.ALIGN_RIGHT, font_size=24)
+    menu.add.label(f'Money {player_money}', align=pygame_menu.locals.ALIGN_RIGHT, font_size=24)
     current_plane = menu.add.selector('Select Plane', planes, align=pygame_menu.locals.ALIGN_RIGHT, font_size=24)
     pic_place = menu.add.image("data/real_pics/i-15.jpg", load_from_file=True, align=pygame_menu.locals.ALIGN_RIGHT)
     info_btn = menu.add.button('View plane info', align=pygame_menu.locals.ALIGN_RIGHT, font_size=16)
