@@ -11,6 +11,7 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
     score = 0
     k_spawn_dec = 0
     size = width, height = 1200, 800
+    paused = False
 
     screen = pygame.display.set_mode(size)
     img_path = random.choice(['./data/backgrounds/jungles.png',
@@ -37,6 +38,27 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
     clock = pygame.time.Clock()
 
     while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    paused = not paused
+            elif event.type == pygame.MOUSEBUTTONDOWN and not paused:
+                if pygame.mouse.get_pressed()[0]:
+                    player.shoot(player_bullets)
+                elif pygame.mouse.get_pressed()[2]:
+                    player.shoot_rocket(player_rockets)
+
+        if paused:
+            pause_text = font.render("Paused - Press P to Resume", True, (255, 255, 255))
+            pause_rect = pause_text.get_rect(center=(width // 2, height // 2))
+            screen.fill((0, 0, 0))
+            screen.blit(pause_text, pause_rect)
+            pygame.display.flip()
+            clock.tick(fps)
+            continue
+
         key_pressed = pygame.key.get_pressed()
 
         if key_pressed[pygame.K_w] or key_pressed[pygame.K_UP]:
@@ -56,16 +78,6 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
 
         if not (key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]):
             player.not_turning(1)
-
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if pygame.mouse.get_pressed()[0]:
-                    player.shoot(player_bullets)
-                elif pygame.mouse.get_pressed()[2]:
-                    player.shoot_rocket(player_rockets)
-
-            if event.type == pygame.QUIT:
-                running = False
 
         enemy = Enemy([random.randint(0, width - 150), -100])
         if enemy.check_collision(enemies) and k_spawn == 80:

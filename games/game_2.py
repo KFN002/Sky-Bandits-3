@@ -3,7 +3,7 @@ import pygame
 import random
 
 
-def play(plane_data, player_data):  # аналогично 1 уровню, но с вражескими самолетами
+def play(plane_data, player_data):
     pygame.init()
     k_spawn = 0
     k_shoot = 0
@@ -30,40 +30,45 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
     players.add(player)
 
     running = True
-    screen.fill('white')
+    paused = False
     fps = 60
     clock = pygame.time.Clock()
 
     while running:
-        key_pressed = pygame.key.get_pressed()
-
-        if key_pressed[pygame.K_w] or key_pressed[pygame.K_UP]:
-            player.move_up()
-
-        if key_pressed[pygame.K_s] or key_pressed[pygame.K_DOWN]:
-            player.move_down(height)
-
-        if key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]:
-            player.move_left()
-
-        if key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]:
-            player.move_right(width)
-
-        if not (key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]):
-            player.not_turning(-1)
-
-        if not (key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]):
-            player.not_turning(1)
-
         for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if pygame.mouse.get_pressed()[0]:
-                    player.shoot(player_bullets)
-                elif pygame.mouse.get_pressed()[2]:
-                    player.shoot_rocket(player_rockets)
-
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    paused = not paused
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0] and not paused:
+                    player.shoot(player_bullets)
+                elif pygame.mouse.get_pressed()[2] and not paused:
+                    player.shoot_rocket(player_rockets)
+
+        if paused:
+            pause_text = font.render("Paused - Press P to Resume", True, (255, 255, 255))
+            pause_rect = pause_text.get_rect(center=(width // 2, height // 2))
+            screen.fill((0, 0, 0))
+            screen.blit(pause_text, pause_rect)
+            pygame.display.flip()
+            clock.tick(fps)
+            continue
+
+        key_pressed = pygame.key.get_pressed()
+        if key_pressed[pygame.K_w] or key_pressed[pygame.K_UP]:
+            player.move_up()
+        if key_pressed[pygame.K_s] or key_pressed[pygame.K_DOWN]:
+            player.move_down(height)
+        if key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]:
+            player.move_left()
+        if key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]:
+            player.move_right(width)
+        if not (key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]):
+            player.not_turning(-1)
+        if not (key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]):
+            player.not_turning(1)
 
         enemy = Enemy([random.randint(0, width - 150), -100])
         if enemy.check_collision(enemies) and k_spawn == 80:
@@ -86,7 +91,7 @@ def play(plane_data, player_data):  # аналогично 1 уровню, но 
 
         for gamer in players:
             gamer.update(players, player_data, plane_data, score)
-            gamer.check_plane_collision(enemies)
+            gamer.check_collision(enemies)
             gamer.shot(enemy_bullets)
 
         for rocket in player_rockets:

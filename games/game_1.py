@@ -1,3 +1,4 @@
+import time
 from game_objects.game_objects import Player, EnemyBase, AARocket, Decorations, Background
 import pygame
 import random
@@ -29,38 +30,44 @@ def play(plane_data, player_data):
     players.add(player)
 
     running = True
+    paused = False
     fps = 60
 
     clock = pygame.time.Clock()
 
     while running:
-        key_pressed = pygame.key.get_pressed()
-
-        if key_pressed[pygame.K_w] or key_pressed[pygame.K_UP]:
-            player.move_up()
-
-        if key_pressed[pygame.K_s] or key_pressed[pygame.K_DOWN]:
-            player.move_down(height)
-
-        if key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]:
-            player.move_left()
-
-        if key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]:
-            player.move_right(width)
-
-        if not (key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]):
-            player.not_turning(-1)
-
-        if not (key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]):
-            player.not_turning(1)
-
         for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if pygame.mouse.get_pressed()[0]:
-                    player.drop_bomb(bombs)
-
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    paused = not paused
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 and not paused:
+                    player.drop_bomb(bombs)
+
+        if paused:
+            pause_text = font.render("Paused - Press P to Resume", True, (255, 255, 255))
+            pause_rect = pause_text.get_rect(center=(width // 2, height // 2))
+            screen.fill((0, 0, 0))
+            screen.blit(pause_text, pause_rect)
+            pygame.display.flip()
+            clock.tick(fps)
+            continue
+
+        key_pressed = pygame.key.get_pressed()
+        if key_pressed[pygame.K_w] or key_pressed[pygame.K_UP]:
+            player.move_up()
+        if key_pressed[pygame.K_s] or key_pressed[pygame.K_DOWN]:
+            player.move_down(height)
+        if key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]:
+            player.move_left()
+        if key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]:
+            player.move_right(width)
+        if not (key_pressed[pygame.K_a] or key_pressed[pygame.K_LEFT]):
+            player.not_turning(-1)
+        if not (key_pressed[pygame.K_d] or key_pressed[pygame.K_RIGHT]):
+            player.not_turning(1)
 
         enemy_base = EnemyBase(plane_data[5], [random.randint(0, width - 150), -100])
         if enemy_base.check_collision(enemies) and k_spawn == 10 and enemy_base.check_collision(decorations):
@@ -130,6 +137,8 @@ def play(plane_data, player_data):
 
         pygame.display.flip()
         clock.tick(fps)
+
+        # Update spawn counters
         k_spawn_aa = (k_spawn_aa + 1) % 151
         k_spawn = (k_spawn + 1) % 11
         k_spawn_dec_t = (k_spawn_dec_t + 1) % 11
